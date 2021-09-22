@@ -10,8 +10,11 @@ import org.springframework.batch.item.data.MongoItemWriter;
 import org.springframework.batch.item.data.builder.MongoItemWriterBuilder;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.file.FlatFileItemReader;
+import org.springframework.batch.item.file.LineMapper;
 import org.springframework.batch.item.file.builder.FlatFileItemReaderBuilder;
 import org.springframework.batch.item.file.mapping.BeanWrapperFieldSetMapper;
+import org.springframework.batch.item.file.mapping.DefaultLineMapper;
+import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -26,16 +29,25 @@ public class BatchConfiguration {
 
     @Bean
     public FlatFileItemReader<Book> reader() {
-        return new FlatFileItemReaderBuilder<Book>()
-            .name("bookReader")
+        FlatFileItemReader<Book> itemReader = new FlatFileItemReader<>();
+        itemReader.setLinesToSkip(0);
+        itemReader.setName("item-reader");
+        itemReader.setResource(new FileSystemResource("/Users/pradeep/OneDrive/code/books.csv"));
+        DefaultLineMapper lineMapper = new DefaultLineMapper<>();
+        lineMapper.setLineTokenizer(new DelimitedLineTokenizer(","));
+        itemReader.setLineMapper(lineMapper);
+        return itemReader;
+        /*return new FlatFileItemReaderBuilder<Book>()
+            .name("item-reader")
             .resource(new FileSystemResource("/Users/pradeep/OneDrive/code/books.csv"))
             .delimited()
+            
             .names(new String[] {"bookId","goodReadsBookId", "bestBookId", "workId", "booksCount", "isbn", "isbn13", "authors", "originalPublicationYear"
             , "originalTitle", "title", "languageCode", "averageRating", "ratingsCount", "workRatingsCount", "workTextReviewCount", "ratings1", "ratings2", "ratings3", "ratings4", "ratings5", "imageUrl", "smallImageUrl"})
             .fieldSetMapper(new BeanWrapperFieldSetMapper<Book>() {{
                 setTargetType(Book.class);
             }})
-            .build();
+            .build();*/
     }
 
     @Bean
