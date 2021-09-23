@@ -1,4 +1,4 @@
-package net.thetechstack.batchprocessor.book;
+package net.thetechstack.batchprocessor.flatfilejob;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

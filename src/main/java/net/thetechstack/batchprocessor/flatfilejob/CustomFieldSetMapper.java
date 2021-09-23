@@ -1,4 +1,4 @@
-package net.thetechstack.batchprocessor.book;
+package net.thetechstack.batchprocessor.flatfilejob;
 
 import java.util.HashMap;
 import java.util.Map;

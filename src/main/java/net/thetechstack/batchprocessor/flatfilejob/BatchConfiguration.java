@@ -1,4 +1,4 @@
-package net.thetechstack.batchprocessor.book;
+package net.thetechstack.batchprocessor.flatfilejob;
 
 import java.util.Map;
 
@@ -12,17 +12,20 @@ import org.springframework.batch.core.configuration.annotation.StepBuilderFactor
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.data.MongoItemWriter;
 import org.springframework.batch.item.data.builder.MongoItemWriterBuilder;
-import org.springframework.batch.item.database.BeanPropertyItemSqlParameterSourceProvider;
+import org.springframework.batch.item.database.ItemSqlParameterSourceProvider;
 import org.springframework.batch.item.database.JdbcBatchItemWriter;
 import org.springframework.batch.item.database.builder.JdbcBatchItemWriterBuilder;
 import org.springframework.batch.item.file.FlatFileItemReader;
 import org.springframework.batch.item.file.mapping.DefaultLineMapper;
 import org.springframework.batch.item.file.transform.DelimitedLineTokenizer;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 @Configuration
 @EnableBatchProcessing
@@ -30,12 +33,14 @@ public class BatchConfiguration {
     @Autowired public JobBuilderFactory jobBuilderFactory;
     @Autowired public StepBuilderFactory stepBuilderFactory;
 
+    
+    
     @Bean
-    public FlatFileItemReader<Map<String, Object>> reader() {
+    public FlatFileItemReader<Map<String, Object>> reader(@Value("#{jobParameters['input-file']}") String inputFile) {
         FlatFileItemReader<Map<String, Object>> itemReader = new FlatFileItemReader<>();
         itemReader.setLinesToSkip(0);
         itemReader.setName("item-reader");
-        itemReader.setResource(new FileSystemResource("C:/Users/PRADEEP/OneDrive/code/books_test.csv"));
+        itemReader.setResource(new FileSystemResource(inputFile));
         DefaultLineMapper<Map<String, Object>> mapper = new DefaultLineMapper<>();
         DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer(",");
         tokenizer.setNames(new String[] {"bookId","goodReadsBookId"});
@@ -45,17 +50,6 @@ public class BatchConfiguration {
         mapper.setFieldSetMapper(new CustomFieldSetMapper());
         itemReader.setLineMapper(mapper);
         return itemReader;
-        /*return new FlatFileItemReaderBuilder<Book>()
-            .name("item-reader")
-            .resource(new FileSystemResource("C:/Users/PRADEEP/OneDrive/code/books.csv"))
-            .delimited()
-            
-            .names(new String[] {"bookId","goodReadsBookId", "bestBookId", "workId", "booksCount", "isbn", "authors", "originalPublicationYear"
-            , "originalTitle", "title", "languageCode", "averageRating", "ratingsCount", "workRatingsCount", "workTextReviewCount", "ratings1", "ratings2", "ratings3", "ratings4", "ratings5", "imageUrl", "smallImageUrl"})
-            .fieldSetMapper(new BeanWrapperFieldSetMapper<Book>() {{
-                setTargetType(Book.class);
-            }})
-            .build();*/
     }
 
     @Bean
@@ -65,14 +59,24 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public JdbcBatchItemWriter<Map<String, Object>> writer(DataSource dataSource) {
+    public JdbcBatchItemWriter<Map<String, Object>> jdbcBatchItemWriter(DataSource dataSource) {
     return new JdbcBatchItemWriterBuilder<Map<String, Object>>()
-        .itemSqlParameterSourceProvider(new BeanPropertyItemSqlParameterSourceProvider<>())
-        .sql("INSERT INTO people (bookId, goodReadsBookId) VALUES (:bookId, :goodReadsBookId)")
+        .itemSqlParameterSourceProvider(new MapSqlParameterSourceProvider())
+        .sql("INSERT INTO book (book_id, good_reads_book_id) VALUES (:bookId, :goodReadsBookId)")
         .dataSource(dataSource)
         .build();
     }
 
+class MapSqlParameterSourceProvider implements ItemSqlParameterSourceProvider<Map<String, Object>> {
+
+    @Override
+    public SqlParameterSource createSqlParameterSource(Map<String, Object> map) {
+        SqlParameterSource parameters = new MapSqlParameterSource().addValue("bookId", map.get("bookId"))
+        .addValue("goodReadsBookId", map.get("goodReadsBookId"));
+        return parameters;
+    }
+    
+}
     @Bean
     public Job dataProcessorJob(JobCompletionNotificationListener listener, Step step1) {
     return jobBuilderFactory.get("dataProcessorJob")
@@ -84,11 +88,11 @@ public class BatchConfiguration {
     }
 
     @Bean
-    public Step step1(FlatFileItemReader<Map<String, Object>> reader, JdbcBatchItemWriter<Map<String, Object>> writer) {
+    public Step step1(FlatFileItemReader<Map<String, Object>> reader, JdbcBatchItemWriter<Map<String, Object>> jdbcBatchItemWriter) {
     return stepBuilderFactory.get("step1")
         .<Map<String, Object>, Map<String, Object>> chunk(10)
         .reader(reader)
-        .writer(writer)
+        .writer(jdbcBatchItemWriter)
         .build();
     }
 }
