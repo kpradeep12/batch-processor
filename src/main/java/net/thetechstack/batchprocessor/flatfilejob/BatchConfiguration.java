@@ -23,7 +23,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
@@ -34,26 +33,20 @@ public class BatchConfiguration {
    
     @Bean
     @StepScope
-    public FlatFileItemReader<Map<String, Object>> reader(@Value("#{jobParameters['input-file']}") String inputFile) {
+    public FlatFileItemReader<Map<String, Object>> reader(@Value("#{jobParameters['input-file']}") String inputFile,
+                @Value("#{jobParameters['delimiter']}") String delimiter,
+                @Value("#{jobParameters['columns']}") String columns) {
         FlatFileItemReader<Map<String, Object>> itemReader = new FlatFileItemReader<>();
         itemReader.setLinesToSkip(0);
         itemReader.setName("item-reader");
         itemReader.setResource(new FileSystemResource(inputFile));
         DefaultLineMapper<Map<String, Object>> mapper = new DefaultLineMapper<>();
-        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer(",");
-        tokenizer.setNames(new String[] {"bookId","goodReadsBookId"});
-        //tokenizer.setNames(new String[] {"bookId","goodReadsBookId", "bestBookId", "workId", "booksCount", "isbn", "authors", "originalPublicationYear"
-        //, "originalTitle", "title", "languageCode", "averageRating", "ratingsCount", "workRatingsCount", "workTextReviewCount", "ratings1", "ratings2", "ratings3", "ratings4", "ratings5", "imageUrl", "smallImageUrl"});
+        DelimitedLineTokenizer tokenizer = new DelimitedLineTokenizer(delimiter);
+        tokenizer.setNames(columns.split(","));
         mapper.setLineTokenizer(tokenizer);
         mapper.setFieldSetMapper(new CustomFieldSetMapper());
         itemReader.setLineMapper(mapper);
         return itemReader;
-    }
-
-    @Bean
-    public MongoItemWriter<Map<String, Object>> writer(MongoTemplate mongoTemplate) {
-        return new MongoItemWriterBuilder<Map<String, Object>>().template(mongoTemplate).collection("books")
-                .build();
     }
 
     @Bean
