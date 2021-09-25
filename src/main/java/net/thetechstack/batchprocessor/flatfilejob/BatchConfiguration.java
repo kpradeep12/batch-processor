@@ -6,9 +6,9 @@ import javax.sql.DataSource;
 
 import org.springframework.batch.core.Job;
 import org.springframework.batch.core.Step;
-import org.springframework.batch.core.configuration.annotation.EnableBatchProcessing;
 import org.springframework.batch.core.configuration.annotation.JobBuilderFactory;
 import org.springframework.batch.core.configuration.annotation.StepBuilderFactory;
+import org.springframework.batch.core.configuration.annotation.StepScope;
 import org.springframework.batch.core.launch.support.RunIdIncrementer;
 import org.springframework.batch.item.data.MongoItemWriter;
 import org.springframework.batch.item.data.builder.MongoItemWriterBuilder;
@@ -28,14 +28,12 @@ import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
 
 @Configuration
-@EnableBatchProcessing
 public class BatchConfiguration {
     @Autowired public JobBuilderFactory jobBuilderFactory;
     @Autowired public StepBuilderFactory stepBuilderFactory;
-
-    
-    
+   
     @Bean
+    @StepScope
     public FlatFileItemReader<Map<String, Object>> reader(@Value("#{jobParameters['input-file']}") String inputFile) {
         FlatFileItemReader<Map<String, Object>> itemReader = new FlatFileItemReader<>();
         itemReader.setLinesToSkip(0);
@@ -78,8 +76,8 @@ class MapSqlParameterSourceProvider implements ItemSqlParameterSourceProvider<Ma
     
 }
     @Bean
-    public Job dataProcessorJob(JobCompletionNotificationListener listener, Step step1) {
-    return jobBuilderFactory.get("dataProcessorJob")
+    public Job flatFileJob(JobCompletionNotificationListener listener, Step step1) {
+    return jobBuilderFactory.get("flatFileJob")
         .incrementer(new RunIdIncrementer())
         .listener(listener)
         .flow(step1)
