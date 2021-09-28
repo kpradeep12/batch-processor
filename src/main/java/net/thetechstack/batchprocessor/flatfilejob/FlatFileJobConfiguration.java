@@ -30,6 +30,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.SqlParameterSource;
@@ -67,7 +68,7 @@ public class FlatFileJobConfiguration {
         FlatFileItemReader<Map<String, Object>> itemReader = new FlatFileItemReader<>();
         itemReader.setLinesToSkip(0);
         itemReader.setName("flat-file-reader");
-        itemReader.setResource(new FileSystemResource(inputFile));
+        itemReader.setResource(new ClassPathResource(inputFile));
         itemReader.setLineMapper(mapper);
         return itemReader;
     }

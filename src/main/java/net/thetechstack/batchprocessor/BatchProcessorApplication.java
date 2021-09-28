@@ -27,10 +27,9 @@ public class BatchProcessorApplication implements CommandLineRunner {
 	@Override
 	public void run(String... args) throws Exception {
 		JobParameters jobParameters = new JobParametersBuilder()
-				.addString("input-file", "C:/Users/PRADEEP/OneDrive/code/books_test.csv").addString("delimiter", ",")
-				.addString("table-name", "book").addString("column-names", "book_id,good_reads_book_id,title")
+				.addString("input-file", "airlines.csv").addString("delimiter", ",")
+				.addString("table-name", "airlines").addString("column-names", "month,male_passengers,female_passengers")
 				.addLong("time", System.currentTimeMillis())
-				// .addString("columns","bookId,goodReadsBookId,bestBookId,workId,booksCount,isbn,authors,originalPublicationYear,originalTitle,title,languageCode,averageRating,ratingsCount,workRatingsCount,workTextReviewCount,ratings1,ratings2,ratings3,ratings4,ratings5,imageUrl,smallImageUrl")
 				.toJobParameters();
 		jobLauncher.run(flatFileJob, jobParameters);
 	}
